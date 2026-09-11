@@ -1,9 +1,12 @@
 package pixel.academy.rest_crud_app.entity;
+
 import jakarta.annotation.PostConstruct;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import pixel.academy.rest_crud_app.rest.StudentErrorResponse;
+import pixel.academy.rest_crud_app.rest.StudentNotFoundException;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,22 +22,51 @@ public class StudentRestController {
 
         theStudents = new ArrayList<>();
 
-        List<Student> theStudents = new ArrayList<>();
         theStudents.add(new Student("Munteanu", "Eugen"));
         theStudents.add(new Student("Ojog", "Maria"));
         theStudents.add(new Student("Gonzales", "Pedro"));
-
-
     }
-    //definim endpont-ul pentru /students
+
+    // definim endpoint-ul pentru /students
     @GetMapping("/students")
-    public List<Student> getStudents(){
+    public List<Student> getStudents() {
 
         return theStudents;
     }
-    //definim un endpoint ca sa afisam toti studentii nostri dupa index
+
+    // definim un endpoint ca sa afisam studentii dupa index
     @GetMapping("/students/{studentId}")
-    public Student getStudent(@PathVariable int studentId){
+    public Student getStudent(@PathVariable int studentId) {
+
+        // verificam studentulID si dimensiunea listei
+        if ((studentId >= theStudents.size()) || (studentId < 0)) {
+            throw new StudentNotFoundException("Student id not found - " + studentId);
+        }
+
         return theStudents.get(studentId);
+    }
+
+    @ExceptionHandler
+    public ResponseEntity<StudentErrorResponse> handException(StudentNotFoundException ex) {
+
+        StudentErrorResponse error = new StudentErrorResponse();
+
+        error.setStatus(HttpStatus.NOT_FOUND.value());
+        error.setMessage(ex.getMessage());
+        error.setTimeStamp(System.currentTimeMillis());
+
+        return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler
+    public ResponseEntity<StudentErrorResponse> handException(Exception ex) {
+
+        StudentErrorResponse error = new StudentErrorResponse();
+
+        error.setStatus(HttpStatus.BAD_REQUEST.value());
+        error.setMessage(ex.getMessage());
+        error.setTimeStamp(System.currentTimeMillis());
+
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
 }
